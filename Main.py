@@ -4,8 +4,22 @@ import wx
 class Form(wx.Panel):
     def __init__(self, *args, **kwargs):
         super(Form, self).__init__(*args, **kwargs)
-        self.works = []
+        self.works = [
+            'Кладка стен (Газобетон до 100мм) м.кв/м.пог',
+            'Кладка стен (Газобетон 100мм)(армированная) м.кв/м.пог',
+            'Демонтаж стен (Толщина 100 мм) м.кв/м.пог',
+            'Монтаж декоративных балок м.пог',
+            'Штукатурка стены (откосы) п/маякам м.кв/м.пог',
+            'Стяжка пола (до 50мм) черновая м.кв/м.пог',
+            'Разводка электроточки (розетеки выключатели) точка',
+            'Монтаж кабельканала м.пог',
+            'Монтаж щитовой под автоматы (внутренний) до 24 автоматов шт'
+        ]
+        self.prices = [100, 120, 80, 100, 100, 95, 95, 40, 350]
+        self.priceMap = dict(zip(self.works,self.prices))
+        self.sumPrice = 0;
         self.createControls()
+        self.bindEvents()
         self.doLayout()
 
     def createControls(self):
@@ -16,14 +30,49 @@ class Form(wx.Panel):
         self.amountLabel = wx.StaticText(self, label="Кол-во")
         self.priceLabel = wx.StaticText(self, label="Цена:")
         self.amountValue = wx.TextCtrl(self, value="1")
-        self.worksComboBox = wx.ComboBox(self, choices=self.works,
+        self.worksComboBox = wx.ComboBox(self, value=self.works[0], choices=self.works,
                                             style=wx.CB_DROPDOWN,)
-        self.priceValue = wx.StaticText(self, label="0")
+        self.priceValue = wx.StaticText(self, label=str(int(self.amountValue.LabelText)*
+                                           self.priceMap[self.worksComboBox.GetValue()]))
 
-
+    def bindEvents(self):
+        for control, event, handler in \
+                [(self.saveButton, wx.EVT_BUTTON, self.onSave),
+                 (self.addButton, wx.EVT_BUTTON, self.onAdd),
+                 (self.amountValue, wx.EVT_TEXT, self.onValueChanged),
+                 (self.worksComboBox, wx.EVT_COMBOBOX, self.onComboBoxChanged)]:
+            control.Bind(event, handler)
 
     def doLayout(self):
         raise NotImplementedError
+
+       
+    def onComboBoxChanged(self, event):
+        self.priceValue.SetLabelText(
+            str(self.priceMap[self.worksComboBox.GetValue()]*int(self.amountValue.GetValue())))
+
+    def onAdd(self,event):
+        self.sumPrice += int(self.priceValue.GetLabelText())
+        self.__log(self.worksComboBox.GetValue() + " " +
+                   self.amountValue.GetValue() + " ед. " +
+                   self.priceValue.GetLabelText() + " грн.")
+
+    def onSave(self, event):
+        file = open('output.txt', 'w')
+        self.__log("Итого:" + str(self.sumPrice))
+
+        file.write(self.logger.GetValue())
+        self.logger.SetLabelText("")
+        file.close()
+
+
+    def onValueChanged(self, event):
+        self.priceValue.SetLabelText(
+            str(self.priceMap[self.worksComboBox.GetValue()] * int(self.amountValue.GetValue())))
+
+ 
+    def __log(self, message):
+        self.logger.AppendText('%s\n' % message)
 
 
 class FormWithSizer(Form):
